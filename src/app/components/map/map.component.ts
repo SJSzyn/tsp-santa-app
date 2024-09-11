@@ -6,6 +6,7 @@ import {NearestNeighbourService} from '../../services/tsp-algorithms/nearest-nei
 import {TwoOptService} from '../../services/tsp-algorithms/two-opt.service';
 import {GreedyService} from '../../services/tsp-algorithms/greedy.service';
 import {AntColonyService} from '../../services/tsp-algorithms/ant-colony.service';
+import {GeneticService} from '../../services/tsp-algorithms/genetic.service';
 
 @Component({
   selector: 'app-map',
@@ -24,7 +25,8 @@ export class MapComponent implements OnInit {
   constructor(private nearestNeighbourService: NearestNeighbourService,
               private twoOptService: TwoOptService,
               private greedyService: GreedyService,
-              private antColonyService: AntColonyService) {}
+              private antColonyService: AntColonyService,
+              private geneticService: GeneticService) {}
 
   ngOnInit(): void {
     this.initMap();
@@ -137,6 +139,9 @@ export class MapComponent implements OnInit {
         break;
       case 'ant-colony':
         routeCoordinates = this.antColonyService.calculateAntColonyRoute(locations); // Use Greedy Algorithm
+        break;
+      case 'genetic':
+        routeCoordinates = this.geneticService.calculateGeneticRoute(locations); // Use Greedy Algorithm
         break;
     }
 
