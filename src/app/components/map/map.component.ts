@@ -3,6 +3,7 @@ import * as L from 'leaflet';
 import { locations } from '../../../assets/locations';
 import {ControlsComponent} from './controls/controls.component';
 import {NearestNeighbourService} from '../../services/tsp-algorithms/nearest-neighbour.service';
+import {TwoOptService} from '../../services/tsp-algorithms/two-opt.service';
 
 @Component({
   selector: 'app-map',
@@ -18,7 +19,8 @@ export class MapComponent implements OnInit {
   private routeLayer: any = null;
   private markerLayer: any = null;
 
-  constructor(private nearestNeighbourService: NearestNeighbourService) {}
+  constructor(private nearestNeighbourService: NearestNeighbourService,
+              private twoOptService: TwoOptService) {}
 
   ngOnInit(): void {
     this.initMap();
@@ -122,6 +124,9 @@ export class MapComponent implements OnInit {
         break;
       case 'nearest-neighbour':
         routeCoordinates = this.nearestNeighbourService.calculateNearestNeighbourRoute(locations); // Call Nearest Neighbour Algorithm
+        break;
+      case 'two-opt':
+        routeCoordinates = this.twoOptService.calculateTwoOptRoute(locations); // Use 2-Opt
         break;
     }
 
