@@ -5,6 +5,7 @@ import {ControlsComponent} from './controls/controls.component';
 import {NearestNeighbourService} from '../../services/tsp-algorithms/nearest-neighbour.service';
 import {TwoOptService} from '../../services/tsp-algorithms/two-opt.service';
 import {GreedyService} from '../../services/tsp-algorithms/greedy.service';
+import {AntColonyService} from '../../services/tsp-algorithms/ant-colony.service';
 
 @Component({
   selector: 'app-map',
@@ -22,7 +23,8 @@ export class MapComponent implements OnInit {
 
   constructor(private nearestNeighbourService: NearestNeighbourService,
               private twoOptService: TwoOptService,
-              private greedyService: GreedyService) {}
+              private greedyService: GreedyService,
+              private antColonyService: AntColonyService) {}
 
   ngOnInit(): void {
     this.initMap();
@@ -132,6 +134,9 @@ export class MapComponent implements OnInit {
         break;
       case 'greedy':
         routeCoordinates = this.greedyService.calculateGreedyRoute(locations); // Use Greedy Algorithm
+        break;
+      case 'ant-colony':
+        routeCoordinates = this.antColonyService.calculateAntColonyRoute(locations); // Use Greedy Algorithm
         break;
     }
 
