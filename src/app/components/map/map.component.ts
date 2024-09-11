@@ -2,6 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import * as L from 'leaflet';
 import { locations } from '../../../assets/locations';
 import {ControlsComponent} from './controls/controls.component';
+import {NearestNeighbourService} from '../../services/tsp-algorithms/nearest-neighbour.service';
 
 @Component({
   selector: 'app-map',
@@ -16,6 +17,8 @@ export class MapComponent implements OnInit {
   private map: any;
   private routeLayer: any = null;
   private markerLayer: any = null;
+
+  constructor(private nearestNeighbourService: NearestNeighbourService) {}
 
   ngOnInit(): void {
     this.initMap();
@@ -117,6 +120,9 @@ export class MapComponent implements OnInit {
       case 'basic':
         routeCoordinates = this.getDummyRoute();
         break;
+      case 'nearest-neighbour':
+        routeCoordinates = this.nearestNeighbourService.calculateNearestNeighbourRoute(locations); // Call Nearest Neighbour Algorithm
+        break;
     }
 
     this.clearRoute();
@@ -144,4 +150,7 @@ export class MapComponent implements OnInit {
   private getDummyRoute(): [number, number][] {
     return locations;
   }
+
+
+
 }
