@@ -1,0 +1,55 @@
+import { Injectable } from '@angular/core';
+import {locations} from '../../../assets/locations';
+import {DistanceService} from "../distance.service";
+
+@Injectable({
+  providedIn: 'root'
+})
+export class NearestNeighbourService {
+
+  constructor(private distanceService: DistanceService) { }
+
+  calculateNearestNeighbourRoute(locations: [number, number][]): [number, number][] {
+    const unvisited = [...locations];
+    const route = [];
+    let currentLocation = unvisited.shift(); // Start from the first location
+    const startTime = performance.now(); // Start time
+
+    // Keep track of the starting location to return to it at the end
+    const startingLocation = currentLocation;
+
+    if (currentLocation) {
+      route.push(currentLocation);
+    }
+
+    while (unvisited.length > 0) {
+      let nearest = unvisited[0];
+      let nearestDistance = this.distanceService.calculateDistance(currentLocation!, nearest);
+
+      for (let i = 1; i < unvisited.length; i++) {
+        const distance = this.distanceService.calculateDistance(currentLocation!, unvisited[i]);
+        if (distance < nearestDistance) {
+          nearest = unvisited[i];
+          nearestDistance = distance;
+        }
+      }
+
+      route.push(nearest);
+      currentLocation = nearest;
+      unvisited.splice(unvisited.indexOf(nearest), 1); // Remove visited location
+    }
+
+    // Return to the starting location to complete the cycle
+    if (startingLocation) {
+      route.push(startingLocation);
+    }
+
+    const endTime = performance.now(); // End time
+    const timeTaken = endTime - startTime; // Calculate the time taken
+
+    console.log('Time taken:', timeTaken.toFixed(2), "ms");
+    console.log('Nodes used:', locations.length);
+    return route; // Return the calculated route
+  }
+
+}

@@ -2,6 +2,11 @@ import {Component, OnInit} from '@angular/core';
 import * as L from 'leaflet';
 import { locations } from '../../../assets/locations';
 import {ControlsComponent} from './controls/controls.component';
+import {NearestNeighbourService} from '../../services/tsp-algorithms/nearest-neighbour.service';
+import {TwoOptService} from '../../services/tsp-algorithms/two-opt.service';
+import {GreedyService} from '../../services/tsp-algorithms/greedy.service';
+import {AntColonyService} from '../../services/tsp-algorithms/ant-colony.service';
+import {GeneticService} from '../../services/tsp-algorithms/genetic.service';
 
 @Component({
   selector: 'app-map',
@@ -16,6 +21,12 @@ export class MapComponent implements OnInit {
   private map: any;
   private routeLayer: any = null;
   private markerLayer: any = null;
+
+  constructor(private nearestNeighbourService: NearestNeighbourService,
+              private twoOptService: TwoOptService,
+              private greedyService: GreedyService,
+              private antColonyService: AntColonyService,
+              private geneticService: GeneticService) {}
 
   ngOnInit(): void {
     this.initMap();
@@ -117,6 +128,21 @@ export class MapComponent implements OnInit {
       case 'basic':
         routeCoordinates = this.getDummyRoute();
         break;
+      case 'nearest-neighbour':
+        routeCoordinates = this.nearestNeighbourService.calculateNearestNeighbourRoute(locations); // Call Nearest Neighbour Algorithm
+        break;
+      case 'two-opt':
+        routeCoordinates = this.twoOptService.calculateTwoOptRoute(locations); // Use 2-Opt
+        break;
+      case 'greedy':
+        routeCoordinates = this.greedyService.calculateGreedyRoute(locations); // Use Greedy Algorithm
+        break;
+      case 'ant-colony':
+        routeCoordinates = this.antColonyService.calculateAntColonyRoute(locations); // Use Greedy Algorithm
+        break;
+      case 'genetic':
+        routeCoordinates = this.geneticService.calculateGeneticRoute(locations); // Use Greedy Algorithm
+        break;
     }
 
     this.clearRoute();
@@ -144,4 +170,7 @@ export class MapComponent implements OnInit {
   private getDummyRoute(): [number, number][] {
     return locations;
   }
+
+
+
 }
