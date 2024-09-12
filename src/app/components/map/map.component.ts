@@ -7,6 +7,7 @@ import {TwoOptService} from '../../services/tsp-algorithms/two-opt.service';
 import {GreedyService} from '../../services/tsp-algorithms/greedy.service';
 import {AntColonyService} from '../../services/tsp-algorithms/ant-colony.service';
 import {GeneticService} from '../../services/tsp-algorithms/genetic.service';
+import {small} from '../../../assets/small';
 
 @Component({
   selector: 'app-map',
@@ -61,27 +62,27 @@ export class MapComponent implements OnInit {
     return totalDistance;
   }
 
-  private calculateCenter(locations: [number, number][]): [number, number] {
+  private calculateCenter(small: [number, number][]): [number, number] {
     let sumLat = 0;
     let sumLng = 0;
 
-    locations.forEach(location => {
+    small.forEach(location => {
       sumLat += location[0];
       sumLng += location[1];
     });
 
-    const avgLat = sumLat / locations.length;
-    const avgLng = sumLng / locations.length;
+    const avgLat = sumLat / small.length;
+    const avgLng = sumLng / small.length;
 
     return [avgLat, avgLng];
   }
 
   private initMap(): void {
-    const center = this.calculateCenter(locations);
+    const center = this.calculateCenter(small);
 
     this.map = L.map('map', {
       center: center,
-      zoom: 13
+      zoom: 10
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -129,19 +130,19 @@ export class MapComponent implements OnInit {
         routeCoordinates = this.getDummyRoute();
         break;
       case 'nearest-neighbour':
-        routeCoordinates = this.nearestNeighbourService.calculateNearestNeighbourRoute(locations); // Call Nearest Neighbour Algorithm
+        routeCoordinates = this.nearestNeighbourService.calculateNearestNeighbourRoute(small); // Call Nearest Neighbour Algorithm
         break;
       case 'two-opt':
-        routeCoordinates = this.twoOptService.calculateTwoOptRoute(locations); // Use 2-Opt
+        routeCoordinates = this.twoOptService.calculateTwoOptRoute(small); // Use 2-Opt
         break;
       case 'greedy':
-        routeCoordinates = this.greedyService.calculateGreedyRoute(locations); // Use Greedy Algorithm
+        routeCoordinates = this.greedyService.calculateGreedyRoute(small); // Use Greedy Algorithm
         break;
       case 'ant-colony':
-        routeCoordinates = this.antColonyService.calculateAntColonyRoute(locations); // Use Greedy Algorithm
+        routeCoordinates = this.antColonyService.calculateAntColonyRoute(small); // Use Greedy Algorithm
         break;
       case 'genetic':
-        routeCoordinates = this.geneticService.calculateGeneticRoute(locations); // Use Greedy Algorithm
+        routeCoordinates = this.geneticService.calculateGeneticRoute(small); // Use Greedy Algorithm
         break;
     }
 
@@ -168,7 +169,7 @@ export class MapComponent implements OnInit {
   }
 
   private getDummyRoute(): [number, number][] {
-    return locations;
+    return small;
   }
 
 
