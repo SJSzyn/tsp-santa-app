@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import {DistanceService} from "../distance.service";
 
 @Injectable({
   providedIn: 'root'
@@ -11,11 +12,13 @@ export class AntColonyService {
   public antCount: number = 10;  // Number of ants to simulate
   public iterations: number = 100;  // Number of iterations for optimization
 
-  constructor() {}
+  constructor(private distanceService: DistanceService) {}
 
   // Main method to calculate the route using the ACO algorithm
   calculateAntColonyRoute(locations: [number, number][]): [number, number][] {
-    const numLocations = locations.length;
+    const startTime = performance.now(); // Start time for performance measurement
+    let distanceCalculations = 0; // Count the number of distance calculations
+    const numLocations = locations.length; // Number of locations
     this.initializePheromones(numLocations);
 
     let bestRoute: [number, number][] = [];
@@ -25,8 +28,9 @@ export class AntColonyService {
       const allRoutes: [number, number][][] = [];
 
       for (let ant = 0; ant < this.antCount; ant++) {
-        const route = this.constructSolution(locations);
-        const distance = this.calculateTotalDistance(route);
+        const route = this.constructSolution(locations, distanceCalculations);
+        const distance = this.calculateTotalDistance(route, distanceCalculations);
+        distanceCalculations += numLocations - 1; // Update the count for each ant route calculation
 
         if (distance < bestDistance) {
           bestDistance = distance;
@@ -37,6 +41,18 @@ export class AntColonyService {
       }
 
       this.updatePheromones(allRoutes, locations);
+    }
+
+    const endTime = performance.now(); // End time for performance measurement
+    const timeTaken = endTime - startTime; // Calculate the time taken
+
+    // Log information
+    console.log('Time taken:', timeTaken.toFixed(2), "ms");
+    console.log('Nodes used:', numLocations);
+
+    // Ensure the route returns to the starting point
+    if (bestRoute.length > 0 && bestRoute[0] !== bestRoute[bestRoute.length - 1]) {
+      bestRoute.push(bestRoute[0]); // Append the starting node to the end of the route
     }
 
     return bestRoute;
@@ -50,7 +66,7 @@ export class AntColonyService {
   }
 
   // Construct a solution for an individual ant
-  private constructSolution(locations: [number, number][]): [number, number][] {
+  private constructSolution(locations: [number, number][], distanceCalculations: number): [number, number][] {
     const route: [number, number][] = [];
     const unvisited = [...locations];
     let currentLocation = unvisited.shift(); // Start from the first location
@@ -60,10 +76,15 @@ export class AntColonyService {
     }
 
     while (unvisited.length > 0) {
-      const nextLocation = this.selectNextLocation(currentLocation!, unvisited, locations);
+      const nextLocation = this.selectNextLocation(currentLocation!, unvisited, locations, distanceCalculations);
       route.push(nextLocation);
       currentLocation = nextLocation;
       unvisited.splice(unvisited.indexOf(nextLocation), 1);
+    }
+
+    // Ensure that the solution returns to the starting location
+    if (route.length > 0 && route[0] !== route[route.length - 1]) {
+      route.push(route[0]); // Append the starting node to the end of the route
     }
 
     return route;
@@ -73,11 +94,13 @@ export class AntColonyService {
   private selectNextLocation(
     currentLocation: [number, number],
     unvisited: [number, number][],
-    locations: [number, number][]
+    locations: [number, number][],
+    distanceCalculations: number
   ): [number, number] {
     const probabilities = unvisited.map((location) => {
       const pheromoneLevel = this.getPheromoneLevel(currentLocation, location, locations);
-      const distance = this.calculateDistance(currentLocation, location);
+      const distance = this.distanceService.calculateDistance(currentLocation, location);
+      distanceCalculations++; // Increment the number of distance calculations
       return Math.pow(pheromoneLevel, this.alpha) * Math.pow(1 / distance, this.beta);
     });
 
@@ -132,33 +155,15 @@ export class AntColonyService {
   }
 
   // Helper method to calculate the total distance of the route
-  private calculateTotalDistance(route: [number, number][]): number {
+  private calculateTotalDistance(route: [number, number][], distanceCalculations?: number): number {
     let totalDistance = 0;
     for (let i = 0; i < route.length - 1; i++) {
-      totalDistance += this.calculateDistance(route[i], route[i + 1]);
+      totalDistance += this.distanceService.calculateDistance(route[i], route[i + 1]);
+      if (distanceCalculations !== undefined) {
+        distanceCalculations++; // Increment distance calculations if passed in
+      }
     }
     return totalDistance;
   }
 
-  // Helper method to calculate the distance between two coordinates
-  private calculateDistance(coord1: [number, number], coord2: [number, number]): number {
-    const R = 6371e3; // Earth's radius in meters
-    const lat1 = this.toRadians(coord1[0]);
-    const lat2 = this.toRadians(coord2[0]);
-    const deltaLat = this.toRadians(coord2[0] - coord1[0]);
-    const deltaLng = this.toRadians(coord2[1] - coord1[1]);
-
-    const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-      Math.cos(lat1) * Math.cos(lat2) *
-      Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    const distance = R * c;
-    return distance;
-  }
-
-  private toRadians(degrees: number): number {
-    return degrees * (Math.PI / 180);
-  }
 }

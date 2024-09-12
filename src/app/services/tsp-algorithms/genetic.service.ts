@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import {DistanceService} from "../distance.service";
+import {TotalDistanceService} from "../total-distance.service";
 
 @Injectable({
   providedIn: 'root'
@@ -9,16 +11,23 @@ export class GeneticService {
   private mutationRate = 0.01;
   private generations = 100;
 
-  constructor() {}
+  constructor(private distanceService: DistanceService,
+              private totalDistanceService: TotalDistanceService) { }
 
   // Main method to calculate the route using the Genetic Algorithm
   calculateGeneticRoute(locations: [number, number][]): [number, number][] {
+    const startTime = performance.now(); // Start time for performance measurement
+    let distanceCalculations = 0; // Count the number of distance calculations
+    const numLocations = locations.length; // Number of locations
+
+    // Initialize population
     let population = this.initializePopulation(locations);
     let bestRoute = population[0];
-    let bestDistance = this.calculateTotalDistance(bestRoute);
+    let bestDistance = this.totalDistanceService.calculateTotalDistance(bestRoute);
+    distanceCalculations += numLocations; // Initial distance calculations for best route
 
     for (let generation = 0; generation < this.generations; generation++) {
-      const matingPool = this.createMatingPool(population);
+      const matingPool = this.createMatingPool(population, distanceCalculations);
 
       // Ensure the mating pool is populated
       if (matingPool.length === 0) {
@@ -26,15 +35,29 @@ export class GeneticService {
         return bestRoute;
       }
 
-      population = this.evolvePopulation(matingPool);
+      population = this.evolvePopulation(matingPool, distanceCalculations);
 
-      const currentBestRoute = this.getBestRoute(population);
-      const currentBestDistance = this.calculateTotalDistance(currentBestRoute);
+      const currentBestRoute = this.getBestRoute(population, distanceCalculations);
+      const currentBestDistance = this.totalDistanceService.calculateTotalDistance(currentBestRoute);
+      distanceCalculations += numLocations; // Update distance calculations for each generation's best route
 
       if (currentBestDistance < bestDistance) {
         bestRoute = currentBestRoute;
         bestDistance = currentBestDistance;
       }
+    }
+
+    const endTime = performance.now(); // End time for performance measurement
+    const timeTaken = endTime - startTime; // Calculate the time taken
+
+    // Log information
+    console.log('Total number of distance calculations:', distanceCalculations);
+    console.log('Time taken:', timeTaken.toFixed(2), "ms");
+    console.log('Nodes used:', numLocations);
+
+    // Ensure the route returns to the starting point
+    if (bestRoute.length > 0 && bestRoute[0] !== bestRoute[bestRoute.length - 1]) {
+      bestRoute.push(bestRoute[0]); // Append the starting node to the end of the route
     }
 
     return bestRoute;
@@ -43,12 +66,10 @@ export class GeneticService {
   // Initialize population with random routes
   private initializePopulation(locations: [number, number][]): [number, number][][] {
     const population: [number, number][][] = [];
-
     for (let i = 0; i < this.populationSize; i++) {
       const shuffledLocations = this.shuffle([...locations]);
       population.push(shuffledLocations);
     }
-
     return population;
   }
 
@@ -62,14 +83,15 @@ export class GeneticService {
   }
 
   // Create a mating pool based on fitness (distance)
-  private createMatingPool(population: [number, number][][]): [number, number][][] {
-    const fitnessScores = population.map(route => 1 / this.calculateTotalDistance(route));
+  private createMatingPool(population: [number, number][][], distanceCalculations: number): [number, number][][] {
+    const fitnessScores = population.map(route => 1 / this.totalDistanceService.calculateTotalDistance(route));
+    distanceCalculations += population.length; // Update distance calculations for the population
     const totalFitness = fitnessScores.reduce((acc, score) => acc + score, 0);
 
     const matingPool: [number, number][][] = [];
 
     for (const route of population) {
-      const normalizedFitness = (1 / this.calculateTotalDistance(route)) / totalFitness;
+      const normalizedFitness = (1 / this.totalDistanceService.calculateTotalDistance(route)) / totalFitness;
       const selectionProbability = normalizedFitness * this.populationSize;
       for (let i = 0; i < selectionProbability; i++) {
         matingPool.push(route);
@@ -80,7 +102,7 @@ export class GeneticService {
   }
 
   // Evolve population by performing crossover and mutation
-  private evolvePopulation(matingPool: [number, number][][]): [number, number][][] {
+  private evolvePopulation(matingPool: [number, number][][], distanceCalculations: number): [number, number][][] {
     const newPopulation: [number, number][][] = [];
 
     for (let i = 0; i < this.populationSize; i++) {
@@ -129,12 +151,14 @@ export class GeneticService {
   }
 
   // Get the best route from the population based on distance
-  private getBestRoute(population: [number, number][][]): [number, number][] {
+  private getBestRoute(population: [number, number][][], distanceCalculations: number): [number, number][] {
     let bestRoute = population[0];
-    let bestDistance = this.calculateTotalDistance(bestRoute);
+    let bestDistance = this.totalDistanceService.calculateTotalDistance(bestRoute);
+    distanceCalculations++; // Increment for each best route calculation
 
     for (const route of population) {
-      const distance = this.calculateTotalDistance(route);
+      const distance = this.totalDistanceService.calculateTotalDistance(route);
+      distanceCalculations++; // Increment for each route evaluation
       if (distance < bestDistance) {
         bestRoute = route;
         bestDistance = distance;
@@ -142,36 +166,5 @@ export class GeneticService {
     }
 
     return bestRoute;
-  }
-
-  // Helper method to calculate the total distance of the route
-  private calculateTotalDistance(route: [number, number][]): number {
-    let totalDistance = 0;
-    for (let i = 0; i < route.length - 1; i++) {
-      totalDistance += this.calculateDistance(route[i], route[i + 1]);
-    }
-    return totalDistance;
-  }
-
-  // Helper method to calculate the distance between two coordinates
-  private calculateDistance(coord1: [number, number], coord2: [number, number]): number {
-    const R = 6371e3; // Earth's radius in meters
-    const lat1 = this.toRadians(coord1[0]);
-    const lat2 = this.toRadians(coord2[0]);
-    const deltaLat = this.toRadians(coord2[0] - coord1[0]);
-    const deltaLng = this.toRadians(coord2[1] - coord1[1]);
-
-    const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-      Math.cos(lat1) * Math.cos(lat2) *
-      Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    const distance = R * c;
-    return distance;
-  }
-
-  private toRadians(degrees: number): number {
-    return degrees * (Math.PI / 180);
   }
 }
