@@ -8,11 +8,11 @@ export class TwoOptService {
 
   constructor(private totalDistanceService: TotalDistanceService) { }
 
-  calculateTwoOptRoute(locations: [number, number][]): [number, number][] {
-    let route = [...locations];
+  calculateTwoOptRoute(small: [number, number][]): [number, number][] {
+    let route = [...small];
     let improved = true;
     let swapCount = 0;
-    let numberOfNodes = locations.length;
+    let numberOfNodes = small.length;
 
     // Start time for performance measurement
     const startTime = performance.now();
@@ -36,14 +36,7 @@ export class TwoOptService {
 
     // Append the starting node at the end to ensure a full loop (return to the original point)
     route.push(route[0]);
-
-    const endTime = performance.now();
-    const timeTaken = endTime - startTime;
-
-    console.log('Total number of swaps:', swapCount);
-    console.log('Time taken:', timeTaken.toFixed(2), "ms");
-    console.log('Nodes used:', numberOfNodes);
-
+    this.logPerformance(swapCount, startTime, small.length);
     return route;
   }
 
@@ -52,6 +45,11 @@ export class TwoOptService {
     const newRoute = route.slice(0, i);
     const reversedSegment = route.slice(i, k + 1).reverse();
     return newRoute.concat(reversedSegment, route.slice(k + 1));
+  }
+
+  private logPerformance(swapCount: number, startTime: number, nodeCount: number): void {
+    const timeTaken = performance.now() - startTime;
+    console.log(`Total swaps: ${swapCount}, Time: ${timeTaken.toFixed(2)} ms, Nodes: ${nodeCount}`);
   }
 
 }
