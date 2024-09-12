@@ -1,0 +1,19 @@
+<p>alogrithm-iterations works!</p>
+<div *ngIf="iterations.length > 0">
+  <h3>Algorithm Iterations</h3>
+  <table>
+    <thead>
+    <tr>
+      <th>Iteration</th>
+      <th>Total Distance (km)</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let iteration of iterations; let i = index"
+        [class.fastest]="i === fastestIterationIndex">
+      <td>{{ i + 1 }}</td>
+      <td>{{ (iteration.distance / 1000).toFixed(2) }}</td>
+    </tr>
+    </tbody>
+  </table>
+</div>

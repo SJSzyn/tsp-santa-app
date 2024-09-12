@@ -8,12 +8,14 @@ import {GreedyService} from '../../services/tsp-algorithms/greedy.service';
 import {AntColonyService} from '../../services/tsp-algorithms/ant-colony.service';
 import {GeneticService} from '../../services/tsp-algorithms/genetic.service';
 import {small} from '../../../assets/small';
+import {AlogrithmIterationsComponent} from './table/alogrithm-iterations/alogrithm-iterations.component';
 
 @Component({
   selector: 'app-map',
   standalone: true,
   imports: [
-    ControlsComponent
+    ControlsComponent,
+    AlogrithmIterationsComponent
   ],
   templateUrl: './map.component.html',
   styleUrl: './map.component.css'
@@ -22,6 +24,8 @@ export class MapComponent implements OnInit {
   private map: any;
   private routeLayer: any = null;
   private markerLayer: any = null;
+
+  iterations: { route: [number, number][], distance: number }[] = [];
 
   constructor(private nearestNeighbourService: NearestNeighbourService,
               private twoOptService: TwoOptService,
@@ -134,6 +138,7 @@ export class MapComponent implements OnInit {
         break;
       case 'two-opt':
         routeCoordinates = this.twoOptService.calculateTwoOptRoute(small); // Use 2-Opt
+        this.iterations = this.twoOptService.getIterations(); // Adjust service to provide iterations
         break;
       case 'greedy':
         routeCoordinates = this.greedyService.calculateGreedyRoute(small); // Use Greedy Algorithm
@@ -143,6 +148,7 @@ export class MapComponent implements OnInit {
         break;
       case 'genetic':
         routeCoordinates = this.geneticService.calculateGeneticRoute(small); // Use Greedy Algorithm
+        this.iterations = this.geneticService.getIterations()
         break;
     }
 

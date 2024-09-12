@@ -9,15 +9,18 @@ export class GeneticService {
 
   private populationSize = 100;
   private mutationRate = 0.01;
-  private generations = 10000;
+  private generations = 100;
+  private iterations: { route: [number, number][], distance: number }[] = [];
 
   constructor(private distanceService: DistanceService,
-              private totalDistanceService: TotalDistanceService) {
-  }
+              private totalDistanceService: TotalDistanceService) { }
 
   calculateGeneticRoute(locations: [number, number][]): [number, number][] {
     const startTime = performance.now();
     const numLocations = locations.length;
+
+    // Clear previous iterations
+    this.iterations = [];
 
     // Initialize population and best route
     let population = this.initializePopulation(locations);
@@ -26,11 +29,16 @@ export class GeneticService {
 
     for (let generation = 0; generation < this.generations; generation++) {
       const matingPool = this.createMatingPool(population);
-
       population = this.evolvePopulation(matingPool);
 
       const currentBestRoute = this.getBestRoute(population);
       const currentBestDistance = this.totalDistanceService.calculateTotalDistance(currentBestRoute);
+
+      // Add the current best route for the generation to iterations
+      this.iterations.push({
+        route: [...currentBestRoute],
+        distance: currentBestDistance
+      });
 
       if (currentBestDistance < bestDistance) {
         bestRoute = currentBestRoute;
@@ -49,8 +57,13 @@ export class GeneticService {
     return bestRoute;
   }
 
+  // Method to get iterations for the table
+  getIterations(): { route: [number, number][], distance: number }[] {
+    return this.iterations;
+  }
+
   private initializePopulation(locations: [number, number][]): [number, number][][] {
-    return Array.from({length: this.populationSize}, () => this.shuffle([...locations]));
+    return Array.from({ length: this.populationSize }, () => this.shuffle([...locations]));
   }
 
   private shuffle(array: [number, number][]): [number, number][] {
@@ -71,7 +84,7 @@ export class GeneticService {
   }
 
   private evolvePopulation(matingPool: [number, number][][]): [number, number][][] {
-    return Array.from({length: this.populationSize}, () => {
+    return Array.from({ length: this.populationSize }, () => {
       const parent1 = this.selectFromMatingPool(matingPool);
       const parent2 = this.selectFromMatingPool(matingPool);
       const child = this.crossover(parent1, parent2);
